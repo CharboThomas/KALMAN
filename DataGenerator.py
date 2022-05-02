@@ -3,42 +3,51 @@ import math as mt
 import matplotlib.pyplot as plt
 
 
-def MRUA(a: int, v: int, d: int, t: int, n: int):
+def MRUA(a: int, v: int, d: int, t: int, cst: int):
     """
-    MRUA = Mouvement rectiligne uniforme
+    MRUA = Mouvement rectiligne uniforme accelérée
     :param a: is the acceleration
     :param v: is the speed
     :param d: is the start position
     :param t: is a time in second
-    :param n: is the number of sample
-    :return:
+    :return: dataX,dataY: it's a list of point
     """
-
+    n = t
     temps = np.linspace(0, t, n)
-
-    position = []
-
-    for i in range(0, len(temps), 1):
-        X = a * (temps[i] ** (2)) + v * temps[i] + d
-
-        position.append(X)
-
-    return (position)
-
-
-def liste0(n: int, data: int):
-    liste = []
+    dataX = []
+    dataY = []
 
     for i in range(0, n, 1):
-        liste.append(data)
+        X = a * (temps[i] ** (2)) + v * temps[i] + d
+        dataX.append(X)
+        dataY.append(cst)
 
-    return (liste)
+    return(dataX,dataY)
 
 
-def MCUA(a: int, w: int, O: int, r: int, t: int, n: int):
+def angMRUA(liste: list ,angle: float , startX: int, startY: int, stateX:int, stateY:int):
+    """
+    function used for inclinate a MRUA on the space
+    :param liste:  data
+    :param angle:  angle uses for the inclinaison of the translation
+    :param startX: last position of X before the motion
+    :param startY: last position of Y before the motion
+    :param stateX:
+    :param stateY:
+    :return:
+    """
+    listeX,listeY = [],[]
+
+    for i in range(0,len(liste),1):
+        listeX.append(startX + stateX*liste[i] * np.sin(angle))
+        listeY.append(startY + stateY*liste[i] * np.cos(angle))
+
+    return(listeX,listeY)
+
+
+def MCUA(w: int, O: int, r: int, t: int, startX: int, startY: int):
     """
     MCU = Mouvement circulaire uniforme
-    :param a: is the acceleration
     :param w: is the speed in rad/s
     :param 0: is the start inclinaison
     :param t: is a time in second
@@ -46,66 +55,48 @@ def MCUA(a: int, w: int, O: int, r: int, t: int, n: int):
     :param r: is the radius of the circle
     :return:
     """
-
+    n = t
     temps = np.linspace(0, t, n)
+    dataX = []
+    dataY = []
 
-    positionX = []
-    positionY = []
+    for i in range(0, n, 1):
+        dataX.append(startX + r * mt.cos(w * temps[i] + O))
+        dataY.append(startY + r * mt.sin(w * temps[i] + O))
 
-    for i in range(0, len(temps), 1):
-        positionY.append(r * mt.cos(w * temps[i] + O))
-
-        positionX.append(r * mt.sin(w * temps[i] + O))
-
-    return (positionX, positionY)
+    return (dataX,dataY)
 
 
-def updateDistance(listeX, listeY, startX, startY):
+def inv(liste):
 
-    for i in range(0, len(listeX), 1):
-        listeX[i] = listeX[i] + startX
-        listeY[i] = listeY[i] + startY
+    newListe =[]
 
-    return (listeX, listeY)
+    for i in range(1,len(liste)+1,1):
+        newListe.append(liste[len(liste)-i])
+
+    return(newListe)
 
 
-def angMRUA(liste,angle):
-
-    listeX = []
-    listeY = []
-
-    for i in range(0,len(liste),1):
-
-        listeX.append(liste[i] * np.cos(angle))
-        listeY.append(liste[i] * np.sin(angle))
-
-    return(listeX,listeY)
 
 
 def generateData():
 
-    MRUX = MRUA(0, 30, 0, 60, 60)
-    MRUY = liste0(len(MRUX), 250)
+    x,y = MRUA(0, 30, 0, 60, 250)
 
-    MCUAx, MCUAy = MCUA(0, 0.1, 0, 250, 10, 10)
-    MCUAx, MCUAy = updateDistance(MCUAx, MCUAy, MRUX[-1], 0)
-    x,y = MRUX + MCUAx, MRUY + MCUAy
+    ybis, xbis = MCUA(0.1, 0 , 250 ,20 , 0,x[-1])
+    x,y = x + xbis, y + ybis
 
-    Diag = MRUA(0, 50, 0, 120, 120)
-    MRUX,MRUY = angMRUA(Diag,-3.14/3)
-    MRUX,MRUY = updateDistance(MRUX,MRUY, x[-1], y[-1])
-    x,y = x + MRUX, y + MRUY
+    xbis,ybis = MRUA(0, 40, 0, 60, 0)
+    xbis,ybis = angMRUA(xbis,np.pi/3 + np.pi,x[-1],y[-1],1,1)
+    x,y = x + xbis, y + ybis
 
-    MRUY = MRUA(0, 5, y[-1], 120, 120)
-    MRUX = liste0(len(MRUY), x[-1])
-    x,y = x + MRUX , y + MRUY
+    ybis, xbis = MCUA(0.1, np.pi, 250, 20, y[-1] - 100,x[-1])
+    x,y = x + xbis, y + inv(ybis)
 
-    MCUAx, MCUAy = MCUA(0, 1, 0, 250, 3, 10)
-    MCUAx, MCUAy = updateDistance(MCUAx, MCUAy, MRUX[-1], 0)
-    x,y =  MCUAx, MCUAy
+    xbis,ybis = MRUA(0, 20, x[-1], 10, y[-1])
+    x,y = x + xbis, y + ybis
 
-    print(x)
-    print(y)
+
 
     ### tourth, I plot some data on a graph
     plt.title("Motion of the object on the X/Y surface")
